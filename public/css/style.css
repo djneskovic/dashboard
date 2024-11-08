@@ -1,0 +1,103 @@
+@import url("https://fonts.googleapis.com/css2?family=Faculty+Glyphic&family=Host+Grotesk:ital,wght@0,300..800;1,300..800&family=Inter:wght@100..900&display=swap");
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth; }
+
+body {
+  font-family: "Host Grotesk", sans-serif;
+  font-weight: 400;
+  font-style: normal; }
+
+.container {
+  max-width: 1250px !important;
+  margin: 0 auto;
+  padding: 0rem 2rem; }
+
+img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; }
+
+p {
+  font-weight: 500;
+  color: #fff; }
+
+a {
+  text-decoration: none; }
+
+.btn {
+  padding: 5px 20px; }
+  @media screen and (min-width: 780px) {
+    .btn {
+      padding: 10px 40px; } }
+
+#navigation .navigation {
+  padding: 20px 0; }
+  #navigation .navigation .logo {
+    width: 40px;
+    height: 40px; }
+    @media screen and (min-width: 481px) {
+      #navigation .navigation .logo {
+        width: 50px;
+        height: 50px; } }
+    @media screen and (min-width: 780px) {
+      #navigation .navigation .logo {
+        width: 60px;
+        height: 60px; } }
+    @media screen and (min-width: 1024px) {
+      #navigation .navigation .logo {
+        width: 80px;
+        height: 80px; } }
+    #navigation .navigation .logo img {
+      height: 100%;
+      width: 100%;
+      object-fit: cover; }
+  #navigation .navigation .login-btn {
+    border: none;
+    border-radius: 5px;
+    cursor: pointer; }
+
+.homepage {
+  min-height: 100vh; }
+  .homepage .hero .hero-content {
+    text-align: center; }
+    .homepage .hero .hero-content h1 {
+      font-size: 1.5rem; }
+      @media screen and (min-width: 481px) {
+        .homepage .hero .hero-content h1 {
+          font-size: 2rem; } }
+      @media screen and (min-width: 780px) {
+        .homepage .hero .hero-content h1 {
+          font-size: 3rem; } }
+      @media screen and (min-width: 1024px) {
+        .homepage .hero .hero-content h1 {
+          font-size: 4rem; } }
+    .homepage .hero .hero-content p {
+      color: #0e2017;
+      font-size: 16px; }
+      @media screen and (min-width: 780px) {
+        .homepage .hero .hero-content p {
+          font-size: 18px; } }
+  .homepage .hero .hero-logo {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    margin: 2rem 0; }
+    @media screen and (min-width: 481px) {
+      .homepage .hero .hero-logo {
+        width: 200px;
+        height: 200px; } }
+    @media screen and (min-width: 1024px) {
+      .homepage .hero .hero-logo {
+        width: 250px;
+        height: 250px; } }
+  .homepage .hero .advantages {
+    color: #0e2017;
+    font-size: 16px; }
+    @media screen and (min-width: 1024px) {
+      .homepage .hero .advantages {
+        font-size: 18px; } }
