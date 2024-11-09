@@ -1,0 +1,69 @@
+.overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.5);
+	z-index: 2;
+}
+
+.form-container {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	padding: 20px;
+	border-radius: 10px;
+	z-index: 3;
+	min-width: 330px;
+	background-color: #fff;
+	box-shadow: rgba(50, 50, 93, 0.25) 0px 30px 60px -12px inset,
+		rgba(0, 0, 0, 0.3) 0px 18px 36px -18px inset;
+
+	@include screen-sm {
+		min-width: 360px;
+	}
+
+	.form-logo {
+		width: 130px;
+		height: 130px;
+	}
+
+	.form-title {
+		font-size: 15px;
+		margin-bottom: 10px;
+
+		@include screen-sm {
+			font-size: 18px;
+		}
+	}
+
+	.input {
+		font-size: 16px;
+		border: none;
+		margin: 10px;
+		padding: 5px;
+		width: 100%;
+		border-radius: 5px;
+
+		&:focus {
+			outline: none;
+		}
+	}
+
+	.log-in_btn,
+	.btn_sign-up {
+		border-radius: 5px;
+		margin: 20px 0;
+		font-size: 18px;
+
+		@include screen-lg {
+			font-size: 22px;
+		}
+	}
+
+	.role {
+		align-self: flex-start;
+	}
+}

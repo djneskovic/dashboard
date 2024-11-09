@@ -20,7 +20,6 @@ body {
 
 .container {
 	max-width: 1250px !important;
-	// height: 100% !important;
 	margin: 0 auto;
 	padding: 0rem 2rem;
 }
@@ -48,6 +47,18 @@ a {
 	}
 }
 
+.overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100vw;
+	height: 100vh;
+	background: rgba(0, 0, 0, 0.8);
+	backdrop-filter: blur(10px);
+	z-index: 2;
+}
+
 @import "./components/theHeader";
+@import "./components/theForm";
 
 @import "./pages/homePage";

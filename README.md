@@ -2,4 +2,6 @@
 
 npm run serve
 
-#Run sass npm run sass
+#Run sass
+
+npm run sass

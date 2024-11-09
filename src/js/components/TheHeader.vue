@@ -9,14 +9,40 @@
 						alt=""
 					/>
 				</div>
-				<div class="login-btn btn bg-green-50 text-green-950">
+				<div
+					class="login-btn btn bg-green-50 text-green-950"
+					@click="openForm()"
+				>
 					<button>LogIn</button>
 				</div>
 			</div>
 		</div>
 	</nav>
+	<the-form v-if="formVisible" @close-form="closeForm()"></the-form>
 </template>
 
 <script>
-export default {};
+import TheForm from "./TheForm.vue";
+export default {
+	components: {
+		TheForm,
+	},
+
+	data() {
+		return {
+			formVisible: false,
+		};
+	},
+
+	methods: {
+		openForm() {
+			this.formVisible = true;
+			console.log("radi");
+		},
+
+		closeForm() {
+			this.formVisible = false;
+		},
+	},
+};
 </script>
