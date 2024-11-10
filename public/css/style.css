@@ -45,6 +45,63 @@ a {
   backdrop-filter: blur(10px);
   z-index: 2; }
 
+#navigation .nav-list {
+  position: absolute;
+  top: 5rem;
+  left: -100%;
+  height: 100%;
+  background-color: #0e2017;
+  color: white;
+  width: 50%;
+  transition: left 0.5s ease; }
+  @media screen and (min-width: 481px) {
+    #navigation .nav-list {
+      top: 5.6rem; } }
+  @media screen and (min-width: 780px) {
+    #navigation .nav-list {
+      width: 30%;
+      top: 6.2rem; } }
+  @media screen and (min-width: 1024px) {
+    #navigation .nav-list {
+      width: 20%;
+      top: 7.53rem; } }
+  #navigation .nav-list .logo {
+    width: 60px;
+    height: 60px;
+    align-self: center; }
+    @media screen and (min-width: 780px) {
+      #navigation .nav-list .logo {
+        align-self: flex-start; } }
+  #navigation .nav-list p {
+    font-size: 16px;
+    color: #f1f8f3; }
+    @media screen and (min-width: 780px) {
+      #navigation .nav-list p {
+        font-size: 20px; } }
+  #navigation .nav-list ul {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 2rem;
+    padding: 30px 10px; }
+    #navigation .nav-list ul .first-child {
+      border-bottom: 1px solid white;
+      width: 80%;
+      padding-bottom: 10px; }
+    #navigation .nav-list ul li a {
+      font-size: 18px;
+      color: #f1f8f3; }
+      @media screen and (min-width: 780px) {
+        #navigation .nav-list ul li a {
+          font-size: 24px; } }
+      #navigation .nav-list ul li a:hover {
+        color: #85bd98; }
+
+#navigation .nav-list.active {
+  left: 0;
+  /* Move menu into view */ }
+
 #navigation .navigation {
   padding: 20px 0; }
   #navigation .navigation .logo {
@@ -66,7 +123,8 @@ a {
       height: 100%;
       width: 100%;
       object-fit: cover; }
-  #navigation .navigation .login-btn {
+  #navigation .navigation .login-btn,
+  #navigation .navigation .logout-btn {
     border: none;
     border-radius: 5px;
     cursor: pointer; }
@@ -90,7 +148,8 @@ a {
   z-index: 3;
   min-width: 330px;
   background-color: #fff;
-  box-shadow: rgba(50, 50, 93, 0.25) 0px 30px 60px -12px inset, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px inset; }
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 30px 60px -12px inset, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px inset;
+  /* Loader styles */ }
   @media screen and (min-width: 481px) {
     .form-container {
       min-width: 360px; } }
@@ -123,6 +182,25 @@ a {
         font-size: 22px; } }
   .form-container .role {
     align-self: flex-start; }
+  .form-container .loader {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #4caf50;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 2s linear infinite;
+    z-index: 4;
+    /* Ensure the loader is above other content */
+    position: absolute;
+    /* Required to apply z-index */
+    top: 50%;
+    transform: translate(-50%, -50%); }
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg); }
+  100% {
+    transform: rotate(360deg); } }
 
 .homepage {
   min-height: 100vh; }
@@ -164,3 +242,6 @@ a {
     @media screen and (min-width: 1024px) {
       .homepage .hero .advantages {
         font-size: 18px; } }
+
+h1 {
+  font-size: 10px; }

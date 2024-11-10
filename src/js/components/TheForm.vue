@@ -125,6 +125,14 @@
 </template>
 
 <script>
+import {
+	createUserWithEmailAndPassword,
+	signInWithEmailAndPassword,
+} from "firebase/auth";
+import { auth } from "../firebase/firebase"; // Import Firebase auth instance
+// import { doc, setDoc, getDoc } from "firebase/firestore"; // Import Firestore methods
+// import { db } from "../firebase/firebase"; // Import Firestore instance
+
 export default {
 	data() {
 		return {
@@ -134,6 +142,7 @@ export default {
 			password: "",
 			isSignUp: false,
 			loading: false,
+			role: "admin",
 		};
 	},
 
@@ -143,48 +152,100 @@ export default {
 		closeForm() {
 			this.$emit("close-form");
 		},
-		submitForm() {
-			this.loading = true;
-			console.log("Email:", this.email);
-			console.log("Password:", this.password);
 
-			this.email = "";
-			this.password = "";
+		async submitForm() {
+			if (this.isSignUp) {
+				// Validation for sign-up form
+				if (
+					!this.username ||
+					!this.email ||
+					!this.password ||
+					!this.role
+				) {
+					alert("Please fill in all required fields.");
+					return;
+				}
 
-			setTimeout(() => {
-				// Close the form after 3 seconds
-				this.closeForm();
-				// Hide loader
-				this.loading = false;
-			}, 3000);
+				try {
+					this.loading = true;
+
+					// Step 1: Sign up the user with email and password
+					const userCredential =
+						await createUserWithEmailAndPassword(
+							auth,
+							this.email,
+							this.password
+						);
+					const user = userCredential.user;
+
+					console.log("User signed up:", user);
+					alert("Sign-up successful!");
+
+					// Close the form after 3 seconds and reset the form for login
+					setTimeout(() => {
+						this.resetForm();
+						this.closeForm();
+						this.loading = false;
+					}, 3000); // 3 seconds to close the form
+				} catch (error) {
+					console.error("Error signing up:", error);
+					alert(error.message);
+				} finally {
+					console.log("end");
+				}
+			} else {
+				// Handle login if not sign-up
+				await this.loginUser();
+			}
 		},
+
+		async loginUser() {
+			// Login the user with email and password
+			try {
+				this.loading = true;
+				const userCredential = await signInWithEmailAndPassword(
+					auth,
+					this.email,
+					this.password
+				);
+				const user = userCredential.user;
+
+				console.log("User logged in:", user);
+				alert("Login successful!");
+
+				// After successful login, navigate to the dashboard with the correct username
+				// Check if username is provided or fallback to the username from form
+				const usernameToUse =
+					this.username ||
+					user.displayName ||
+					user.email.split("@")[0];
+
+				// After successful login, navigate to the dashboard
+				this.$router.push({
+					name: "Dashboard",
+					params: { username: usernameToUse }, // Use username from form or fallback
+				});
+
+				// Optionally, close the form
+				this.closeForm();
+			} catch (error) {
+				console.error("Error logging in:", error);
+				alert(error.message);
+			} finally {
+				this.loading = false;
+			}
+		},
+
 		toggleForm() {
 			this.isSignUp = !this.isSignUp;
+		},
+
+		resetForm() {
+			this.email = "";
+			this.password = "";
+			this.username = "";
+			this.role = "user"; // Reset role
 		},
 	},
 };
 </script>
-
-<style scoped>
-/* Loader styles */
-.loader {
-	border: 4px solid #f3f3f3;
-	border-top: 4px solid #4caf50;
-	border-radius: 50%;
-	width: 50px;
-	height: 50px;
-	animation: spin 2s linear infinite;
-	z-index: 4; /* Ensure the loader is above other content */
-	position: absolute; /* Required to apply z-index */
-	top: 50%;
-	transform: translate(-50%, -50%);
-}
-@keyframes spin {
-	0% {
-		transform: rotate(0deg);
-	}
-	100% {
-		transform: rotate(360deg);
-	}
-}
-</style>

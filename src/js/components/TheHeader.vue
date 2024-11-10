@@ -1,28 +1,72 @@
 <template>
 	<nav id="navigation" class="bg-green-950">
-		<div class="container">
-			<div class="navigation flex justify-between items-center">
-				<div class="menu">meni</div>
+		<div class="nav-list" :class="{ active: isActive }">
+			<ul>
 				<div class="logo">
 					<img
 						src="../../../public/images/logo_white.png"
 						alt=""
 					/>
 				</div>
+				<p>Welcome user</p>
+				<li class="first-child">
+					<a href="">Overview</a>
+				</li>
+				<li>
+					<a href="">Tasks</a>
+				</li>
+				<li>
+					<a href="">Calendar</a>
+				</li>
+			</ul>
+		</div>
+		<div class="container">
+			<div class="navigation flex justify-between items-center">
+				<div class="hamburger">
+					<button
+						class="hamburger hamburger--elastic"
+						:class="{ 'is-active': isActive }"
+						type="button"
+						@click="toggleMenu()"
+					>
+						<span class="hamburger-box">
+							<span class="hamburger-inner"></span>
+						</span>
+					</button>
+				</div>
+				<div class="logo">
+					<img
+						src="../../../public/images/logo_white.png"
+						alt=""
+					/>
+				</div>
+
 				<div
-					class="login-btn btn bg-green-50 text-green-950"
-					@click="openForm()"
+					v-if="isLoggedIn"
+					class="logout-btn btn bg-green-50 text-green-950"
+					@click="logout"
 				>
-					<button>LogIn</button>
+					<button>Log Out</button>
+				</div>
+				<div
+					v-else
+					class="login-btn btn bg-green-50 text-green-950"
+					@click="openForm"
+				>
+					<button>Log In</button>
 				</div>
 			</div>
 		</div>
 	</nav>
+
 	<the-form v-if="formVisible" @close-form="closeForm()"></the-form>
 </template>
 
 <script>
 import TheForm from "./TheForm.vue";
+import { auth } from "../firebase/firebase";
+import { signOut, onAuthStateChanged } from "firebase/auth";
+
 export default {
 	components: {
 		TheForm,
@@ -31,17 +75,45 @@ export default {
 	data() {
 		return {
 			formVisible: false,
+			isLoggedIn: false,
+			isActive: false,
 		};
+	},
+
+	created() {
+		onAuthStateChanged(auth, (user) => {
+			if (user) {
+				this.isLoggedIn = true;
+			} else {
+				this.isLoggedIn = false;
+			}
+		});
 	},
 
 	methods: {
 		openForm() {
 			this.formVisible = true;
-			console.log("radi");
 		},
 
 		closeForm() {
 			this.formVisible = false;
+		},
+
+		async logout() {
+			try {
+				await signOut(auth);
+				this.isLoggedIn = false;
+				alert("You are logged out.");
+				this.$router.push({ name: "Home" });
+			} catch (error) {
+				console.error("Error logging out:", error);
+				alert("Logout failed. Please try again.");
+			}
+		},
+
+		toggleMenu() {
+			this.isActive = !this.isActive;
+			console.log("casd");
 		},
 	},
 };
