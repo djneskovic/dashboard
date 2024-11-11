@@ -100,6 +100,14 @@
 					<option value="moderator">Moderator</option>
 				</select>
 
+				<input
+					v-if="role === 'admin'"
+					v-model="adminCode"
+					type="password"
+					placeholder="Enter Admin Code"
+					class="input"
+				/>
+
 				<button
 					type="button"
 					@click="submitForm"
@@ -130,8 +138,6 @@ import {
 	signInWithEmailAndPassword,
 } from "firebase/auth";
 import { auth } from "../firebase/firebase"; // Import Firebase auth instance
-// import { doc, setDoc, getDoc } from "firebase/firestore"; // Import Firestore methods
-// import { db } from "../firebase/firebase"; // Import Firestore instance
 
 export default {
 	data() {
@@ -140,9 +146,22 @@ export default {
 			username: "",
 			email: "",
 			password: "",
-			isSignUp: false,
+			isSignUp: false, // Toggle between login and sign-up forms
 			loading: false,
 			role: "admin",
+			adminCode: "", // Admin code input
+			validAdminCodes: [
+				"CODE123",
+				"CODE456",
+				"CODE789",
+				"CODE111",
+				"CODE222",
+				"CODE333",
+				"CODE444",
+				"CODE555",
+				"CODE666",
+				"CODE777",
+			],
 		};
 	},
 
@@ -166,6 +185,16 @@ export default {
 					return;
 				}
 
+				if (
+					this.role === "admin" &&
+					!this.validAdminCodes.includes(this.adminCode)
+				) {
+					alert(
+						"Invalid admin code. Please enter a valid code."
+					);
+					return;
+				}
+
 				try {
 					this.loading = true;
 
@@ -181,7 +210,19 @@ export default {
 					console.log("User signed up:", user);
 					alert("Sign-up successful!");
 
-					// Close the form after 3 seconds and reset the form for login
+					// Redirect to the dashboard with the username
+					const usernameToUse =
+						this.username ||
+						user.displayName ||
+						user.email.split("@")[0];
+
+					// After sign-up, navigate to the dashboard with the correct username
+					this.$router.push({
+						name: "Dashboard",
+						params: { username: usernameToUse }, // Use the username from the form or fallback
+					});
+
+					// Close the form after a delay and reset it for login
 					setTimeout(() => {
 						this.resetForm();
 						this.closeForm();
@@ -190,8 +231,9 @@ export default {
 				} catch (error) {
 					console.error("Error signing up:", error);
 					alert(error.message);
+					this.loading = false;
 				} finally {
-					console.log("end");
+					console.log("Sign-up process complete");
 				}
 			} else {
 				// Handle login if not sign-up
@@ -214,16 +256,15 @@ export default {
 				alert("Login successful!");
 
 				// After successful login, navigate to the dashboard with the correct username
-				// Check if username is provided or fallback to the username from form
 				const usernameToUse =
 					this.username ||
 					user.displayName ||
 					user.email.split("@")[0];
 
-				// After successful login, navigate to the dashboard
+				// Navigate to the dashboard
 				this.$router.push({
 					name: "Dashboard",
-					params: { username: usernameToUse }, // Use username from form or fallback
+					params: { username: usernameToUse }, // Use the username from the form or fallback
 				});
 
 				// Optionally, close the form
@@ -244,7 +285,8 @@ export default {
 			this.email = "";
 			this.password = "";
 			this.username = "";
-			this.role = "user"; // Reset role
+			this.role = "user"; // Reset role for next user
+			this.adminCode = ""; // Clear the admin code
 		},
 	},
 };
