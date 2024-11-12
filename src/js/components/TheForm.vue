@@ -138,6 +138,8 @@ import {
 	signInWithEmailAndPassword,
 } from "firebase/auth";
 import { auth } from "../firebase/firebase"; // Import Firebase auth instance
+import { db } from "../firebase/firebase"; // Import Firestore instance
+import { collection, doc, setDoc } from "firebase/firestore"; // Modular Firestore imports
 
 export default {
 	data() {
@@ -219,8 +221,16 @@ export default {
 					// After sign-up, navigate to the dashboard with the correct username
 					this.$router.push({
 						name: "Dashboard",
-						params: { username: usernameToUse }, // Use the username from the form or fallback
+						params: { username: usernameToUse },
 					});
+
+					// Add user to Firestore after successful sign-up
+					await this.addUserToFirestore(
+						user.uid,
+						usernameToUse,
+						this.email,
+						this.role
+					);
 
 					// Close the form after a delay and reset it for login
 					setTimeout(() => {
@@ -238,6 +248,28 @@ export default {
 			} else {
 				// Handle login if not sign-up
 				await this.loginUser();
+			}
+		},
+
+		async addUserToFirestore(userId, username, email, role) {
+			try {
+				// Create a reference to the 'users' collection and the specific document for this user
+				const userRef = doc(collection(db, "users"), userId);
+
+				// Save the user data to Firestore
+				await setDoc(userRef, {
+					username: username,
+					email: email,
+					password: this.password, // Consider security concerns before storing plaintext password
+					role: role,
+				});
+
+				console.log("User data saved to Firestore:", userId);
+			} catch (error) {
+				console.error(
+					"Error saving user data to Firestore:",
+					error
+				);
 			}
 		},
 

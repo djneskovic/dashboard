@@ -41,6 +41,7 @@ a {
 
 .btn {
 	padding: 5px 20px;
+	border-radius: 5px;
 
 	@include screen-md {
 		padding: 10px 40px;
@@ -60,6 +61,8 @@ a {
 
 @import "./components/theHeader";
 @import "./components/theForm";
+@import "./components/userInfoForm";
 
 @import "./pages/homePage";
 @import "./pages/theDashboard";
+@import "./pages/userProfile";

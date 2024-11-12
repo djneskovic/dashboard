@@ -9,15 +9,28 @@
 						alt=""
 					/>
 				</div>
-				<p>
-					Welcome <span>{{ username }}</span>
-				</p>
+				<li>
+					<router-link
+						:to="{
+							name: 'Dashboard',
+						}"
+					>
+						Welcome <span>{{ username }}</span>
+					</router-link>
+				</li>
+
 				<!-- Display the username here -->
 				<li class="first-child">
 					<a href="">Overview</a>
 				</li>
 				<li>
-					<a href="">Profile</a>
+					<router-link
+						:to="{
+							name: 'Profile',
+							params: { username: username },
+						}"
+						>Profile</router-link
+					>
 				</li>
 				<li>
 					<a href="">Tasks</a>
