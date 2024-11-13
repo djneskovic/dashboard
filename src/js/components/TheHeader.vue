@@ -13,13 +13,13 @@
 					<router-link
 						:to="{
 							name: 'Dashboard',
+							params: { username: username },
 						}"
+						@click="closeMenu()"
 					>
 						Welcome <span>{{ username }}</span>
 					</router-link>
 				</li>
-
-				<!-- Display the username here -->
 				<li class="first-child">
 					<a href="">Overview</a>
 				</li>
@@ -29,8 +29,10 @@
 							name: 'Profile',
 							params: { username: username },
 						}"
-						>Profile</router-link
+						@click="closeMenu()"
 					>
+						Profile
+					</router-link>
 				</li>
 				<li>
 					<a href="">Tasks</a>
@@ -53,7 +55,7 @@
 						class="hamburger hamburger--elastic"
 						:class="{ 'is-active': isActive }"
 						type="button"
-						@click="toggleMenu()"
+						@click="toggleMenu"
 					>
 						<span class="hamburger-box">
 							<span class="hamburger-inner"></span>
@@ -66,7 +68,6 @@
 						alt=""
 					/>
 				</div>
-
 				<div
 					v-if="isLoggedIn"
 					class="logout-btn btn bg-green-50 text-green-950"
@@ -85,7 +86,7 @@
 		</div>
 	</nav>
 
-	<the-form v-if="formVisible" @close-form="closeForm()"></the-form>
+	<the-form v-if="formVisible" @close-form="closeForm"></the-form>
 </template>
 
 <script>
@@ -104,6 +105,7 @@ export default {
 			isLoggedIn: false,
 			isActive: false,
 			username: "",
+			inactivityTimeout: null, // Timer reference
 		};
 	},
 
@@ -117,11 +119,20 @@ export default {
 						this.extractUsernameFromEmail(user.email)
 					) ||
 					"User";
+				this.startInactivityTimer(); // Start the inactivity timer on login
+				this.setupActivityListeners(); // Set up activity listeners
 			} else {
 				this.isLoggedIn = false;
 				this.username = "";
+				this.clearInactivityTimer(); // Clear timer on logout
+				this.removeActivityListeners(); // Remove listeners on logout
 			}
 		});
+	},
+
+	beforeUnmount() {
+		this.clearInactivityTimer();
+		this.removeActivityListeners();
 	},
 
 	methods: {
@@ -142,12 +153,16 @@ export default {
 			this.formVisible = false;
 		},
 
+		closeMenu() {
+			this.isActive = false;
+		},
+
 		async logout() {
 			try {
 				await signOut(auth);
 				this.isLoggedIn = false;
 				this.username = "";
-				alert("You are logged out.");
+				alert("You have been logged out.");
 				this.$router.push({ name: "Home" });
 			} catch (error) {
 				console.error("Error logging out:", error);
@@ -158,6 +173,41 @@ export default {
 		toggleMenu() {
 			this.isActive = !this.isActive;
 		},
+
+		startInactivityTimer() {
+			this.clearInactivityTimer();
+			this.inactivityTimeout = setTimeout(this.logout, 300000);
+		},
+
+		clearInactivityTimer() {
+			if (this.inactivityTimeout) {
+				clearTimeout(this.inactivityTimeout);
+				this.inactivityTimeout = null;
+			}
+		},
+
+		resetInactivityTimer() {
+			this.startInactivityTimer();
+		},
+
+		setupActivityListeners() {
+			window.addEventListener("mousemove", this.resetInactivityTimer);
+			window.addEventListener("keydown", this.resetInactivityTimer);
+			window.addEventListener("click", this.resetInactivityTimer);
+		},
+
+		removeActivityListeners() {
+			window.removeEventListener(
+				"mousemove",
+				this.resetInactivityTimer
+			);
+			window.removeEventListener("keydown", this.resetInactivityTimer);
+			window.removeEventListener("click", this.resetInactivityTimer);
+		},
 	},
 };
 </script>
+
+<style scoped>
+/* Add your scoped CSS here */
+</style>

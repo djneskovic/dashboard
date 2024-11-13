@@ -21,21 +21,31 @@
 					/>
 				</div>
 
-				<!-- Show loading spinner if still waiting for auth state -->
 				<div v-if="isLoading" class="loading-spinner">
 					Loading...
 				</div>
 
-				<!-- Show user info if user is authenticated and loading is complete -->
 				<div v-if="!isLoading && user && !isEditing">
 					<div class="user-info">
-						<p><strong>Username:</strong> {{ username }}</p>
+						<p>
+							<strong>Username:</strong>
+							{{ user.username }}
+						</p>
 						<p><strong>Email:</strong> {{ user.email }}</p>
-						<p><strong>Role:</strong> {{ userRole }}</p>
-						<p><strong>Full Name:</strong> {{ fullName }}</p>
-						<p><strong>Biography:</strong> {{ bio }}</p>
-						<p><strong>Location:</strong> {{ location }}</p>
-						<p><strong>Phone Number:</strong> {{ phone }}</p>
+						<p><strong>Role:</strong> {{ user.role }}</p>
+						<p>
+							<strong>Full Name:</strong>
+							{{ user.fullName }}
+						</p>
+						<p><strong>Biography:</strong> {{ user.bio }}</p>
+						<p>
+							<strong>Location:</strong>
+							{{ user.location }}
+						</p>
+						<p>
+							<strong>Phone Number:</strong>
+							{{ user.phone }}
+						</p>
 					</div>
 
 					<div class="actions flex">
@@ -54,23 +64,14 @@
 					</div>
 				</div>
 
-				<!-- Show the form for editing profile if isEditing is true -->
 				<div v-if="!isLoading && user && isEditing">
 					<UserInfoForm
-						ref="userInfoForm"
-						:username="username"
-						:email="user.email"
-						:role="userRole"
-						:fullName="fullName"
-						:bio="bio"
-						:location="location"
-						:phone="phone"
-						@submit="handleProfileUpdate"
+						:user="user"
+						@updateProfile="handleProfileUpdate"
 						@cancel="handleCancel"
 					/>
 				</div>
 
-				<!-- Show message if no user is logged in -->
 				<div v-if="!isLoading && !user" class="no-user-message">
 					<p>You are not logged in.</p>
 				</div>
@@ -95,30 +96,15 @@ export default {
 			isLoading: true,
 			isEditing: false,
 			user: null,
-			userRole: "User",
-			username: "",
-			email: "",
-			fullName: "", // New field for full name
-			bio: "", // New field for biography
-			location: "", // New field for location
-			phone: "", // New field for phone number
 		};
 	},
 
 	mounted() {
 		onAuthStateChanged(auth, async (user) => {
 			if (user) {
-				this.user = user;
-				await this.fetchUserData(user.uid);
+				this.user = await this.fetchUserData(user.uid);
 			} else {
 				this.user = null;
-				this.userRole = "User";
-				this.username = "";
-				this.email = "";
-				this.fullName = "";
-				this.bio = "";
-				this.location = "";
-				this.phone = "";
 			}
 			this.isLoading = false;
 		});
@@ -131,24 +117,16 @@ export default {
 				const docSnap = await getDoc(userRef);
 
 				if (docSnap.exists()) {
-					const userData = docSnap.data();
-					this.username =
-						userData.username ||
-						this.user.email.split("@")[0];
-					this.userRole = userData.role || "User";
-					this.email = this.user.email;
-					this.fullName = userData.fullName || "";
-					this.bio = userData.bio || "";
-					this.location = userData.location || "";
-					this.phone = userData.phone || "";
+					return docSnap.data();
 				} else {
-					this.username = this.user.email.split("@")[0];
-					this.userRole = "User";
-					this.email = this.user.email;
-					this.fullName = "";
-					this.bio = "";
-					this.location = "";
-					this.phone = "";
+					return {
+						username: this.user.email.split("@")[0],
+						role: "User",
+						fullName: "",
+						bio: "",
+						location: "",
+						phone: "",
+					};
 				}
 			} catch (error) {
 				console.error(
@@ -159,9 +137,6 @@ export default {
 		},
 
 		async handleProfileUpdate(updatedData) {
-			console.log("Profile updated:", updatedData);
-
-			// Check if all fields are filled
 			if (
 				!updatedData.username ||
 				!updatedData.role ||
@@ -176,28 +151,10 @@ export default {
 
 			try {
 				const user = auth.currentUser;
-
-				// Update the username, role, and new fields in Firestore
 				const userRef = doc(db, "users", user.uid);
-				await updateDoc(userRef, {
-					username: updatedData.username,
-					role: updatedData.role,
-					fullName: updatedData.fullName,
-					bio: updatedData.bio,
-					location: updatedData.location,
-					phone: updatedData.phone,
-				});
+				await updateDoc(userRef, updatedData);
 
-				// Update local state with the updated data
-				this.username = updatedData.username;
-				this.userRole = updatedData.role;
-				this.fullName = updatedData.fullName;
-				this.bio = updatedData.bio;
-				this.location = updatedData.location;
-				this.phone = updatedData.phone;
-
-				console.log("Profile updated in Firestore.");
-
+				this.user = updatedData; // Update local state with the updated data
 				this.isEditing = false;
 			} catch (error) {
 				console.error("Error updating profile:", error);

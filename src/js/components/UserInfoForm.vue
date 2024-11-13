@@ -1,61 +1,62 @@
 <template>
-	<form @submit.prevent="handleSubmit" class="w-full">
+	<form @submit.prevent="submitForm">
 		<div class="edit-profile">
-			<label for="username">New Username:</label>
+			<label for="username">Username</label>
 			<input
+				v-model="form.username"
 				type="text"
 				id="username"
-				v-model="localUsername"
 				required
 			/>
 		</div>
 
 		<div class="edit-profile">
-			<label for="fullName">Full Name:</label>
-			<input type="text" id="fullName" v-model="localFullName" />
+			<label for="role">Role</label>
+			<select v-model="form.role" id="role" required>
+				<option value="admin">Admin</option>
+				<option value="user">User</option>
+				<option value="manager">Manager</option>
+			</select>
 		</div>
 
 		<div class="edit-profile">
-			<label for="bio">Biography:</label>
-			<textarea
-				id="bio"
-				v-model="localBio"
-				placeholder="Write something about yourself..."
-			></textarea>
-		</div>
-
-		<div class="edit-profile">
-			<label for="location">Location:</label>
-			<input type="text" id="location" v-model="localLocation" />
-		</div>
-
-		<div class="edit-profile">
-			<label for="phone">Phone Number:</label>
+			<label for="fullName">Full Name</label>
 			<input
-				type="tel"
-				id="phone"
-				v-model="localPhone"
-				placeholder="e.g. +1234567890"
+				v-model="form.fullName"
+				type="text"
+				id="fullName"
+				required
 			/>
 		</div>
 
 		<div class="edit-profile">
-			<label for="role">New Role:</label>
-			<select v-model="localRole">
-				<option value="admin">Admin</option>
-				<option value="user">User</option>
-				<option value="moderator">Moderator</option>
-			</select>
+			<label for="bio">Biography</label>
+			<textarea v-model="form.bio" id="bio" required></textarea>
+		</div>
+
+		<div class="edit-profile">
+			<label for="location">Location</label>
+			<input
+				v-model="form.location"
+				type="text"
+				id="location"
+				required
+			/>
+		</div>
+
+		<div class="edit-profile">
+			<label for="phone">Phone Number</label>
+			<input v-model="form.phone" type="text" id="phone" required />
 		</div>
 
 		<div class="buttons">
-			<button type="submit" class="btn bg-green-950 text-green-50">
-				Save
+			<button type="submit" class="btn bg-green-100 text-green-950">
+				Save Changes
 			</button>
 			<button
+				@click="cancelEdit"
 				type="button"
-				@click="handleCancel"
-				class="bg-green-100 text-green-950 btn"
+				class="btn bg-green-950 text-green-50"
 			>
 				Cancel
 			</button>
@@ -66,42 +67,19 @@
 <script>
 export default {
 	props: {
-		username: String,
-		email: String,
-		role: String,
+		user: Object,
 	},
 	data() {
 		return {
-			localUsername: this.username,
-			localFullName: "", // New field for full name
-			localBio: "", // New field for biography
-			localLocation: "", // New field for location
-			localPhone: "", // New field for phone number
-			localRole: this.role,
+			form: { ...this.user }, // Initialize form with user data
 		};
 	},
 	methods: {
-		handleSubmit() {
-			// Emit 'submit' with updated values, including new fields
-			this.$emit("submit", {
-				username: this.localUsername,
-				fullName: this.localFullName,
-				bio: this.localBio,
-				location: this.localLocation,
-				phone: this.localPhone,
-				role: this.localRole,
-			});
+		submitForm() {
+			this.$emit("updateProfile", this.form); // Emit updated data to parent
 		},
-		handleCancel() {
-			// Reset the form fields to their original values
-			this.localUsername = this.username;
-			this.localFullName = "";
-			this.localBio = "";
-			this.localLocation = "";
-			this.localPhone = "";
-			this.localRole = this.role;
-			// Emit cancel event to parent
-			this.$emit("cancel");
+		cancelEdit() {
+			this.$emit("cancel"); // Emit cancel event to parent
 		},
 	},
 };
