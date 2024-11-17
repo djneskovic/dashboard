@@ -83,7 +83,7 @@
 <script>
 import { auth, db } from "../firebase/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, deleteDoc } from "firebase/firestore";
 import UserInfoForm from "../components/UserInfoForm.vue";
 
 export default {
@@ -161,9 +161,37 @@ export default {
 			}
 		},
 
-		handleDeleteProfile() {
-			if (this.user) {
-				console.log("Profile deleted:", this.user.uid);
+		async handleDeleteProfile() {
+			if (!this.user) return;
+
+			const confirmDelete = confirm(
+				"Are you sure you want to delete your profile?"
+			);
+			if (!confirmDelete) return;
+
+			try {
+				const currentUser = auth.currentUser;
+				if (!currentUser)
+					throw new Error("No authenticated user found.");
+
+				const userRef = doc(db, "users", currentUser.uid);
+				await deleteDoc(userRef);
+
+				await currentUser.delete();
+
+				await auth.signOut();
+
+				this.$router.push("/home");
+			} catch (error) {
+				console.error("Error deleting profile:", error);
+
+				if (error.code === "auth/requires-recent-login") {
+					alert(
+						"You need to log in again to delete your account."
+					);
+					await auth.signOut();
+					this.$router.push("/login");
+				}
 			}
 		},
 
