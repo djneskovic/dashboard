@@ -14,8 +14,8 @@
 			<label for="role">Role</label>
 			<select v-model="form.role" id="role" required>
 				<option value="admin">Admin</option>
-				<option value="user">User</option>
-				<option value="manager">Manager</option>
+				<option value="designer">Designer</option>
+				<option value="Developer">Developer</option>
 			</select>
 		</div>
 

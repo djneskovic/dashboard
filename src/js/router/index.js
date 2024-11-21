@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import HomePage from "../pages/HomePage.vue";
 import TheDashboard from "../pages/TheDashboard.vue";
 import UserProfile from "../pages/UserProfile.vue";
+import CalendarPage from "../pages/CalendarPage.vue";
 
 const routes = [
 	{
@@ -23,6 +24,12 @@ const routes = [
 		name: "Profile",
 		path: "/dashboard/:username/profile",
 		component: UserProfile,
+		props: true,
+	},
+	{
+		name: "Calendar",
+		path: "/dashboard/:username/calendar",
+		component: CalendarPage,
 		props: true,
 	},
 ];

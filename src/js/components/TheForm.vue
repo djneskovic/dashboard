@@ -96,8 +96,8 @@
 
 				<select v-model="role" class="input">
 					<option value="admin">Admin</option>
-					<option value="user">User</option>
-					<option value="moderator">Moderator</option>
+					<option value="designer">Designer</option>
+					<option value="Developer">Developer</option>
 				</select>
 
 				<input

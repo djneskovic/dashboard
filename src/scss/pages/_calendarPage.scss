@@ -1,0 +1,17 @@
+.calendar-page {
+	padding: 50px 0;
+	text-align: center;
+
+	h2 {
+		font-size: 25px;
+	}
+
+	p {
+		font-size: 16px;
+		margin-bottom: 1rem;
+
+		@include screen-md {
+			font-size: 20px;
+		}
+	}
+}

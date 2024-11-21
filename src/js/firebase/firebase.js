@@ -2,7 +2,7 @@
 
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth"; // Import authentication
-import { getFirestore } from "firebase/firestore"; // Import Firestore
+import { getFirestore, collection, addDoc } from "firebase/firestore"; // Import Firestore functions
 
 // Your Firebase config
 const firebaseConfig = {
@@ -23,4 +23,4 @@ const auth = getAuth(app);
 const db = getFirestore(app); // Firestore database
 
 // Export the auth and db objects to use in your components
-export { auth, db };
+export { auth, db, collection, addDoc };

@@ -238,6 +238,35 @@ a {
   display: flex;
   gap: 20px; }
 
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10; }
+  .modal .modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 5px;
+    width: 300px; }
+  .modal input {
+    width: 100%;
+    padding: 8px;
+    margin: 10px 0;
+    border: 1px solid #0e2017;
+    border-radius: 5px;
+    color: #0e2017; }
+    .modal input:focus {
+      outline: none; }
+  .modal button {
+    background-color: #0e2017;
+    color: #f1f8f3; }
+
 .homepage {
   min-height: 100vh; }
   .homepage .hero .hero-content {
@@ -388,3 +417,15 @@ a {
     @media screen and (min-width: 780px) {
       #profile .profile-page .actions {
         font-size: 24px; } }
+
+.calendar-page {
+  padding: 50px 0;
+  text-align: center; }
+  .calendar-page h2 {
+    font-size: 25px; }
+  .calendar-page p {
+    font-size: 16px;
+    margin-bottom: 1rem; }
+    @media screen and (min-width: 780px) {
+      .calendar-page p {
+        font-size: 20px; } }

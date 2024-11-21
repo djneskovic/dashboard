@@ -38,7 +38,14 @@
 					<a href="">Tasks</a>
 				</li>
 				<li>
-					<a href="">Calendar</a>
+					<router-link
+						:to="{
+							name: 'Calendar',
+							params: { username: username },
+						}"
+						@click="closeMenu()"
+						>Calendar</router-link
+					>
 				</li>
 				<li>
 					<a href="">Activity Log</a>
