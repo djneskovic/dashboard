@@ -19,8 +19,10 @@
 			@cell-dblclick="handleCellDblClick"
 			@event-change="updateEvent"
 			@event-delete="deleteEvent"
+			@event-click="infoEvent"
 			:snap-to-time="15"
 			:class="calendarClass"
+			class="vuecal--full-height-delete"
 		></VueCal>
 
 		<!-- Modal za unos naslova i datuma -->
@@ -134,9 +136,7 @@ export default {
 					const eventData = doc.data();
 					this.events.push({
 						id: doc.id,
-						title: `${eventData.title} (by: ${
-							eventData.createdBy || "Unknown"
-						})`, // Dodavanje korisničkog imena
+						title: eventData.title,
 						start: eventData.start.toDate(),
 						end: eventData.end.toDate(),
 						class: this.getEventClass(eventData),
@@ -202,7 +202,7 @@ export default {
 				// Dodavanje događaja u lokalnu listu
 				this.events.push({
 					id: docRef.id,
-					title: `${this.newEvent.title} (by: ${username})`,
+					title: this.newEvent.title,
 					start: new Date(this.newEvent.start),
 					end: new Date(this.newEvent.end),
 					class: this.getEventClass({
@@ -289,6 +289,10 @@ export default {
 			} catch (error) {
 				console.error("Greška pri brisanju događaja:", error);
 			}
+		},
+
+		infoEvent() {
+			console.log("cao");
 		},
 
 		handleCellDblClick(eventDetails) {
