@@ -134,7 +134,9 @@ export default {
 					const eventData = doc.data();
 					this.events.push({
 						id: doc.id,
-						title: eventData.title,
+						title: `${eventData.title} (by: ${
+							eventData.createdBy || "Unknown"
+						})`, // Dodavanje korisničkog imena
 						start: eventData.start.toDate(),
 						end: eventData.end.toDate(),
 						class: this.getEventClass(eventData),
@@ -171,17 +173,36 @@ export default {
 			}
 
 			try {
+				const user = auth.currentUser;
+				if (!user) {
+					alert(
+						"Morate biti prijavljeni da biste dodali događaj."
+					);
+					return;
+				}
+
+				// Dohvati username korisnika
+				const userDocRef = doc(db, "users", user.uid);
+				const userDoc = await getDoc(userDocRef);
+				const username = userDoc.exists()
+					? userDoc.data().username
+					: "Nepoznati korisnik";
+
+				// Dodavanje događaja u Firestore
 				const docRef = await addDoc(collection(db, "calendar"), {
 					title: this.newEvent.title,
 					start: new Date(this.newEvent.start),
 					end: new Date(this.newEvent.end),
 					role: this.userRole,
+					createdBy: username, // Dodavanje korisničkog imena
 				});
+
 				console.log("Task saved");
 
+				// Dodavanje događaja u lokalnu listu
 				this.events.push({
 					id: docRef.id,
-					title: this.newEvent.title,
+					title: `${this.newEvent.title} (by: ${username})`,
 					start: new Date(this.newEvent.start),
 					end: new Date(this.newEvent.end),
 					class: this.getEventClass({
@@ -210,15 +231,63 @@ export default {
 				}
 
 				const docRef = doc(db, "calendar", event.id);
+				const eventDoc = await getDoc(docRef);
 
-				await updateDoc(docRef, {
-					title: event.title,
-					start: new Date(event.start),
-					end: new Date(event.end),
-				});
-				console.log("Task updated");
+				// Provera vlasništva
+				if (
+					eventDoc.exists() &&
+					eventDoc.data().role === this.userRole
+				) {
+					await updateDoc(docRef, {
+						title: event.title,
+						start: new Date(event.start),
+						end: new Date(event.end),
+					});
+					console.log("Task updated");
+				} else {
+					alert("Nemate dozvolu da ažurirate ovaj događaj.");
+					window.location.reload();
+				}
 			} catch (error) {
 				console.error("Greška pri ažuriranju događaja:", error);
+			}
+		},
+
+		async deleteEvent(eventDetails) {
+			try {
+				const event = eventDetails?.event || eventDetails;
+
+				if (!event) {
+					console.error("Greška: Nema dostupnog događaja.");
+					return;
+				}
+
+				const eventId = event.id || event._eid;
+
+				if (!eventId) {
+					console.error("Greška: Događaj nema validan ID.");
+					return;
+				}
+
+				const docRef = doc(db, "calendar", eventId);
+				const eventDoc = await getDoc(docRef);
+
+				// Provera vlasništva
+				if (
+					eventDoc.exists() &&
+					eventDoc.data().role === this.userRole
+				) {
+					await deleteDoc(docRef);
+					console.log("Događaj uspešno obrisan iz Firestore.");
+					this.events = this.events.filter(
+						(e) => e.id !== eventId
+					);
+				} else {
+					alert("Nemate dozvolu da obrišete ovaj događaj.");
+					window.location.reload();
+				}
+			} catch (error) {
+				console.error("Greška pri brisanju događaja:", error);
 			}
 		},
 
@@ -245,33 +314,6 @@ export default {
 				date.getTime() - date.getTimezoneOffset() * 60000
 			);
 			return localDate.toISOString().slice(0, 16);
-		},
-
-		async deleteEvent(eventDetails) {
-			try {
-				const event = eventDetails?.event || eventDetails;
-
-				if (!event) {
-					console.error("Greška: Nema dostupnog događaja.");
-					return;
-				}
-
-				const eventId = event.id || event._eid;
-
-				if (!eventId) {
-					console.error("Greška: Događaj nema validan ID.");
-					return;
-				}
-
-				const docRef = doc(db, "calendar", eventId);
-
-				await deleteDoc(docRef);
-				console.log("Događaj uspešno obrisan iz Firestore.");
-
-				this.events = this.events.filter((e) => e.id !== eventId);
-			} catch (error) {
-				console.error("Greška pri brisanju događaja:", error);
-			}
 		},
 	},
 };
