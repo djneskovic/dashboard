@@ -17,8 +17,10 @@
 				create: true,
 			}"
 			@cell-dblclick="handleCellDblClick"
+			@event-change="updateEvent"
+			@event-delete="deleteEvent"
 			:snap-to-time="15"
-			class="vuecal--full-height-delete"
+			:class="calendarClass"
 		></VueCal>
 
 		<!-- Modal za unos naslova i datuma -->
@@ -30,7 +32,7 @@
 					v-model="newEvent.title"
 					id="title"
 					type="text"
-					placeholder="Unesite naslov"
+					placeholder="Enter title"
 				/>
 
 				<label for="startDate">Start Date:</label>
@@ -40,7 +42,7 @@
 					type="datetime-local"
 				/>
 
-				<label for="endDate">End date:</label>
+				<label for="endDate">End Date:</label>
 				<input
 					v-model="newEvent.end"
 					id="endDate"
@@ -58,8 +60,17 @@
 <script>
 import VueCal from "vue-cal";
 import "vue-cal/dist/vuecal.css";
-import { db } from "../firebase/firebase";
-import { collection, addDoc, getDocs } from "firebase/firestore";
+import { db, auth } from "../firebase/firebase";
+import {
+	collection,
+	addDoc,
+	getDocs,
+	updateDoc,
+	doc,
+	deleteDoc,
+	getDoc,
+} from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 
 export default {
 	components: { VueCal },
@@ -73,12 +84,46 @@ export default {
 				end: null,
 			},
 			selectedStart: null,
+			userRole: "",
 		};
+	},
+	computed: {
+		calendarClass() {
+			switch (this.userRole) {
+				case "admin":
+					return "admin-calendar";
+				case "designer":
+					return "designer-calendar";
+				case "Developer":
+					return "developer-calendar";
+				default:
+					return "";
+			}
+		},
 	},
 	mounted() {
 		this.loadEvents();
+		this.fetchUserRole();
 	},
 	methods: {
+		async fetchUserRole() {
+			onAuthStateChanged(auth, async (user) => {
+				if (user) {
+					const userDocRef = doc(db, "users", user.uid);
+					const userDoc = await getDoc(userDocRef);
+					if (userDoc.exists()) {
+						const userData = userDoc.data();
+						this.userRole = userData.role || "";
+						console.log(this.userRole);
+					} else {
+						console.log("Korisnički dokument nije pronađen!");
+					}
+				} else {
+					this.userRole = "guest";
+				}
+			});
+		},
+
 		async loadEvents() {
 			try {
 				const querySnapshot = await getDocs(
@@ -88,21 +133,98 @@ export default {
 				querySnapshot.forEach((doc) => {
 					const eventData = doc.data();
 					this.events.push({
+						id: doc.id,
 						title: eventData.title,
 						start: eventData.start.toDate(),
 						end: eventData.end.toDate(),
-						class: "pera",
+						class: this.getEventClass(eventData),
+						role: eventData.role || "unknown",
 					});
 				});
+				console.log("Task loaded");
 			} catch (error) {
 				console.error("Greška pri učitavanju događaja:", error);
+			}
+		},
+
+		getEventClass(eventData) {
+			switch (eventData.role) {
+				case "admin":
+					return "vuecal__event--admin-event";
+				case "designer":
+					return "vuecal__event--designer-event";
+				case "Developer":
+					return "vuecal__event--developer-event";
+				default:
+					return "";
+			}
+		},
+
+		async saveEvent() {
+			if (
+				!this.newEvent.title ||
+				!this.newEvent.start ||
+				!this.newEvent.end
+			) {
+				alert("Morate uneti sve podatke.");
+				return;
+			}
+
+			try {
+				const docRef = await addDoc(collection(db, "calendar"), {
+					title: this.newEvent.title,
+					start: new Date(this.newEvent.start),
+					end: new Date(this.newEvent.end),
+					role: this.userRole,
+				});
+				console.log("Task saved");
+
+				this.events.push({
+					id: docRef.id,
+					title: this.newEvent.title,
+					start: new Date(this.newEvent.start),
+					end: new Date(this.newEvent.end),
+					class: this.getEventClass({
+						role: this.userRole,
+					}),
+					role: this.userRole,
+				});
+
+				this.closeModal();
+			} catch (error) {
+				console.error(
+					"Greška pri čuvanju događaja u Firestore:",
+					error
+				);
+			}
+		},
+
+		async updateEvent(eventDetails) {
+			try {
+				const event = eventDetails.event;
+				console.log("Updating task");
+
+				if (!event.id) {
+					console.error("Greška: Događaj nema ID.");
+					return;
+				}
+
+				const docRef = doc(db, "calendar", event.id);
+
+				await updateDoc(docRef, {
+					title: event.title,
+					start: new Date(event.start),
+					end: new Date(event.end),
+				});
+				console.log("Task updated");
+			} catch (error) {
+				console.error("Greška pri ažuriranju događaja:", error);
 			}
 		},
 
 		handleCellDblClick(eventDetails) {
 			this.selectedStart = eventDetails;
 
-			// Formatiraj start i end u lokalnu vremensku zonu
 			this.newEvent.start = this.formatDateForInput(
 				this.selectedStart
 			);
@@ -118,7 +240,6 @@ export default {
 			this.isModalVisible = false;
 		},
 
-		// Formatiranje datuma za input u formatu YYYY-MM-DDTHH:MM
 		formatDateForInput(date) {
 			const localDate = new Date(
 				date.getTime() - date.getTimezoneOffset() * 60000
@@ -126,37 +247,30 @@ export default {
 			return localDate.toISOString().slice(0, 16);
 		},
 
-		async saveEvent() {
-			if (
-				!this.newEvent.title ||
-				!this.newEvent.start ||
-				!this.newEvent.end
-			) {
-				alert("Morate uneti sve podatke.");
-				return;
-			}
-
+		async deleteEvent(eventDetails) {
 			try {
-				await addDoc(collection(db, "calendar"), {
-					title: this.newEvent.title,
-					start: new Date(this.newEvent.start),
-					end: new Date(this.newEvent.end),
-				});
-				console.log("Događaj uspešno sačuvan u Firestore.");
+				const event = eventDetails?.event || eventDetails;
 
-				this.events.push({
-					title: this.newEvent.title,
-					start: new Date(this.newEvent.start),
-					end: new Date(this.newEvent.end),
-					class: "pera",
-				});
+				if (!event) {
+					console.error("Greška: Nema dostupnog događaja.");
+					return;
+				}
 
-				this.closeModal();
+				const eventId = event.id || event._eid;
+
+				if (!eventId) {
+					console.error("Greška: Događaj nema validan ID.");
+					return;
+				}
+
+				const docRef = doc(db, "calendar", eventId);
+
+				await deleteDoc(docRef);
+				console.log("Događaj uspešno obrisan iz Firestore.");
+
+				this.events = this.events.filter((e) => e.id !== eventId);
 			} catch (error) {
-				console.error(
-					"Greška pri čuvanju događaja u Firestore:",
-					error
-				);
+				console.error("Greška pri brisanju događaja:", error);
 			}
 		},
 	},
@@ -164,13 +278,24 @@ export default {
 </script>
 
 <style>
-/* Prilagođavanje stila */
 .vuecal__event {
 	border-radius: 5px;
-	border: none;
+	border: 2px solid rgba(0, 0, 0, 0.2);
+	padding: 5px;
 }
 
-.pera {
-	background: rgb(187, 160, 160);
+.vuecal__event--admin-event {
+	background: linear-gradient(135deg, #b71c1c, #d32f2f);
+	color: #fff;
+}
+
+.vuecal__event--designer-event {
+	background: linear-gradient(135deg, #512da8, #673ab7);
+	color: #fff;
+}
+
+.vuecal__event--developer-event {
+	background: linear-gradient(135deg, #00796b, #00897b);
+	color: #fff;
 }
 </style>

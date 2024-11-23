@@ -10,7 +10,8 @@ html {
 body {
   font-family: "Host Grotesk", sans-serif;
   font-weight: 400;
-  font-style: normal; }
+  font-style: normal;
+  position: relative; }
 
 .container {
   max-width: 1250px !important;
@@ -54,7 +55,9 @@ a {
   color: white;
   width: 50%;
   transition: left 0.5s ease;
-  border-radius: 0 10px 10px 0; }
+  border-radius: 0 10px 10px 0;
+  height: 100%;
+  z-index: 10; }
   @media screen and (min-width: 481px) {
     #navigation .nav-list {
       top: 5.6rem; } }
@@ -64,7 +67,7 @@ a {
       top: 6.2rem; } }
   @media screen and (min-width: 1024px) {
     #navigation .nav-list {
-      width: 20%;
+      width: 15%;
       top: 7.53rem; } }
   #navigation .nav-list .logo {
     width: 60px;
