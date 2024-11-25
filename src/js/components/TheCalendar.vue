@@ -10,7 +10,6 @@
 			:hide-title-bar="false"
 			:hide-weekdays="[6, 7]"
 			:editable-events="{
-				title: true,
 				drag: true,
 				resize: true,
 				delete: true,
@@ -19,13 +18,13 @@
 			@cell-dblclick="handleCellDblClick"
 			@event-change="updateEvent"
 			@event-delete="deleteEvent"
-			@event-click="infoEvent"
+			@event-click="openEventDetails"
 			:snap-to-time="15"
 			:class="calendarClass"
 			class="vuecal--full-height-delete"
 		></VueCal>
 
-		<!-- Modal za unos naslova i datuma -->
+		<!-- Modal za unos naslova, opisa i datuma -->
 		<div v-if="isModalVisible" class="modal">
 			<div class="modal-content">
 				<h2>Enter task</h2>
@@ -36,6 +35,14 @@
 					type="text"
 					placeholder="Enter title"
 				/>
+
+				<label for="description">Description:</label>
+				<textarea
+					v-model="newEvent.description"
+					id="description"
+					placeholder="Enter description"
+					class="w-full"
+				></textarea>
 
 				<label for="startDate">Start Date:</label>
 				<input
@@ -54,6 +61,30 @@
 					<button class="btn" @click="saveEvent">OK</button>
 					<button class="btn" @click="closeModal">Cancel</button>
 				</div>
+			</div>
+		</div>
+		<div v-if="showDetailsModal" class="modal">
+			<div class="modal-content">
+				<h2 class="text-green-950">
+					Title: {{ selectedEvent.title }}
+				</h2>
+				<p class="text-green-950">
+					<strong>Description:</strong>
+					{{ selectedEvent.description }}
+				</p>
+				<p class="text-green-950">
+					<strong>User:</strong>
+					{{ selectedEvent.createdByEmail }}
+				</p>
+				<p class="text-green-950">
+					<strong>Start:</strong>
+					{{ formatDate(selectedEvent.start) }}<br />
+					<strong>End:</strong>
+					{{ formatDate(selectedEvent.end) }}
+				</p>
+				<button class="btn" @click="closeDetailsModal">
+					Close
+				</button>
 			</div>
 		</div>
 	</div>
@@ -82,11 +113,15 @@ export default {
 			isModalVisible: false,
 			newEvent: {
 				title: "",
+				description: "",
 				start: null,
 				end: null,
+				createdByEmail: "",
 			},
 			selectedStart: null,
 			userRole: "",
+			showDetailsModal: false, // Prikaz modala za detalje
+			selectedEvent: {}, // Selektovani događaj za prikaz
 		};
 	},
 	computed: {
@@ -137,10 +172,12 @@ export default {
 					this.events.push({
 						id: doc.id,
 						title: eventData.title,
+						description: eventData.description,
 						start: eventData.start.toDate(),
 						end: eventData.end.toDate(),
 						class: this.getEventClass(eventData),
 						role: eventData.role || "unknown",
+						createdByEmail: eventData.createdByEmail || "",
 					});
 				});
 				console.log("Task loaded");
@@ -166,7 +203,8 @@ export default {
 			if (
 				!this.newEvent.title ||
 				!this.newEvent.start ||
-				!this.newEvent.end
+				!this.newEvent.end ||
+				!this.newEvent.description
 			) {
 				alert("Morate uneti sve podatke.");
 				return;
@@ -181,20 +219,17 @@ export default {
 					return;
 				}
 
-				// Dohvati username korisnika
-				const userDocRef = doc(db, "users", user.uid);
-				const userDoc = await getDoc(userDocRef);
-				const username = userDoc.exists()
-					? userDoc.data().username
-					: "Nepoznati korisnik";
+				// Dohvati korisnikov email
+				const userEmail = user.email;
 
 				// Dodavanje događaja u Firestore
 				const docRef = await addDoc(collection(db, "calendar"), {
 					title: this.newEvent.title,
+					description: this.newEvent.description,
 					start: new Date(this.newEvent.start),
 					end: new Date(this.newEvent.end),
 					role: this.userRole,
-					createdBy: username, // Dodavanje korisničkog imena
+					createdByEmail: userEmail, // Dodavanje korisničkog emaila
 				});
 
 				console.log("Task saved");
@@ -203,12 +238,14 @@ export default {
 				this.events.push({
 					id: docRef.id,
 					title: this.newEvent.title,
+					description: this.newEvent.description,
 					start: new Date(this.newEvent.start),
 					end: new Date(this.newEvent.end),
 					class: this.getEventClass({
 						role: this.userRole,
 					}),
 					role: this.userRole,
+					createdByEmail: userEmail,
 				});
 
 				this.closeModal();
@@ -306,18 +343,65 @@ export default {
 			);
 			this.newEvent.end = this.formatDateForInput(end);
 
+			this.newEvent.title = "";
 			this.isModalVisible = true;
 		},
 
 		closeModal() {
+			this.newEvent = {
+				title: "",
+				description: "",
+				start: null,
+				end: null,
+				createdByEmail: "",
+			};
+			this.selectedStart = null;
 			this.isModalVisible = false;
 		},
 
 		formatDateForInput(date) {
-			const localDate = new Date(
-				date.getTime() - date.getTimezoneOffset() * 60000
-			);
-			return localDate.toISOString().slice(0, 16);
+			if (!date) return "";
+			const year = date.getFullYear();
+			const month = String(date.getMonth() + 1).padStart(2, "0");
+			const day = String(date.getDate()).padStart(2, "0");
+			const hours = String(date.getHours()).padStart(2, "0");
+			const minutes = String(date.getMinutes()).padStart(2, "0");
+			return `${year}-${month}-${day}T${hours}:${minutes}`;
+		},
+
+		async openEventDetails(event) {
+			try {
+				const docRef = doc(db, "calendar", event.id);
+				const docSnap = await getDoc(docRef);
+
+				if (docSnap.exists()) {
+					this.selectedEvent = {
+						title: docSnap.data().title,
+						description: docSnap.data().description,
+						createdByEmail: docSnap.data().createdByEmail,
+						start: docSnap.data().start.toDate(),
+						end: docSnap.data().end.toDate(),
+					};
+					this.showDetailsModal = true;
+				} else {
+					alert("Događaj nije pronađen.");
+				}
+			} catch (error) {
+				console.error(
+					"Greška pri učitavanju detalja događaja:",
+					error
+				);
+			}
+		},
+		closeDetailsModal() {
+			this.showDetailsModal = false;
+			this.selectedEvent = {};
+		},
+		formatDate(date) {
+			return new Intl.DateTimeFormat("sr-RS", {
+				dateStyle: "medium",
+				timeStyle: "short",
+			}).format(date);
 		},
 	},
 };
@@ -343,5 +427,16 @@ export default {
 .vuecal__event--developer-event {
 	background: linear-gradient(135deg, #00796b, #00897b);
 	color: #fff;
+}
+
+textarea:focus {
+	outline: none;
+}
+
+textarea {
+	border: 1px solid #0e2017;
+	border-radius: 5px;
+	padding: 8px;
+	margin: 10px 0;
 }
 </style>
