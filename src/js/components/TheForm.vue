@@ -137,9 +137,10 @@ import {
 	createUserWithEmailAndPassword,
 	signInWithEmailAndPassword,
 } from "firebase/auth";
-import { auth } from "../firebase/firebase"; // Import Firebase auth instance
-import { db } from "../firebase/firebase"; // Import Firestore instance
-import { collection, doc, setDoc } from "firebase/firestore"; // Modular Firestore imports
+import { auth } from "../firebase/firebase";
+import { db } from "../firebase/firebase";
+import { collection, doc, setDoc } from "firebase/firestore";
+import { getDoc } from "firebase/firestore";
 
 export default {
 	data() {
@@ -148,10 +149,10 @@ export default {
 			username: "",
 			email: "",
 			password: "",
-			isSignUp: false, // Toggle between login and sign-up forms
+			isSignUp: false,
 			loading: false,
-			role: "admin",
-			adminCode: "", // Admin code input
+			role: "designer",
+			adminCode: "",
 			validAdminCodes: [
 				"CODE123",
 				"CODE456",
@@ -176,7 +177,6 @@ export default {
 
 		async submitForm() {
 			if (this.isSignUp) {
-				// Validation for sign-up form
 				if (
 					!this.username ||
 					!this.email ||
@@ -200,7 +200,6 @@ export default {
 				try {
 					this.loading = true;
 
-					// Step 1: Sign up the user with email and password
 					const userCredential =
 						await createUserWithEmailAndPassword(
 							auth,
@@ -212,19 +211,16 @@ export default {
 					console.log("User signed up:", user);
 					alert("Sign-up successful!");
 
-					// Redirect to the dashboard with the username
 					const usernameToUse =
 						this.username ||
 						user.displayName ||
 						user.email.split("@")[0];
 
-					// After sign-up, navigate to the dashboard with the correct username
 					this.$router.push({
 						name: "Dashboard",
 						params: { username: usernameToUse },
 					});
 
-					// Add user to Firestore after successful sign-up
 					await this.addUserToFirestore(
 						user.uid,
 						usernameToUse,
@@ -232,12 +228,26 @@ export default {
 						this.role
 					);
 
-					// Close the form after a delay and reset it for login
+					const userRef = doc(db, "users", user.uid);
+					const currentTime = new Date();
+					currentTime.setHours(currentTime.getHours());
+
+					const localTime = currentTime.toLocaleString();
+
+					await setDoc(
+						userRef,
+						{
+							lastLogin: localTime,
+							timeSpent: 0,
+						},
+						{ merge: true }
+					);
+
 					setTimeout(() => {
 						this.resetForm();
 						this.closeForm();
 						this.loading = false;
-					}, 3000); // 3 seconds to close the form
+					}, 3000);
 				} catch (error) {
 					console.error("Error signing up:", error);
 					alert(error.message);
@@ -246,21 +256,18 @@ export default {
 					console.log("Sign-up process complete");
 				}
 			} else {
-				// Handle login if not sign-up
 				await this.loginUser();
 			}
 		},
 
 		async addUserToFirestore(userId, username, email, role) {
 			try {
-				// Create a reference to the 'users' collection and the specific document for this user
 				const userRef = doc(collection(db, "users"), userId);
 
-				// Save the user data to Firestore
 				await setDoc(userRef, {
 					username: username,
 					email: email,
-					password: this.password, // Consider security concerns before storing plaintext password
+					password: this.password,
 					role: role,
 				});
 
@@ -274,7 +281,6 @@ export default {
 		},
 
 		async loginUser() {
-			// Login the user with email and password
 			try {
 				this.loading = true;
 				const userCredential = await signInWithEmailAndPassword(
@@ -287,25 +293,85 @@ export default {
 				console.log("User logged in:", user);
 				alert("Login successful!");
 
-				// After successful login, navigate to the dashboard with the correct username
+				const userRef = doc(db, "users", user.uid);
+				const currentTime = new Date();
+				currentTime.setHours(currentTime.getHours());
+
+				const localTime = currentTime.toLocaleString();
+
+				await setDoc(
+					userRef,
+					{
+						lastLogin: localTime,
+						timeSpent: 0,
+					},
+					{ merge: true }
+				);
+
 				const usernameToUse =
 					this.username ||
 					user.displayName ||
 					user.email.split("@")[0];
 
-				// Navigate to the dashboard
 				this.$router.push({
 					name: "Dashboard",
-					params: { username: usernameToUse }, // Use the username from the form or fallback
+					params: { username: usernameToUse },
 				});
 
-				// Optionally, close the form
 				this.closeForm();
 			} catch (error) {
 				console.error("Error logging in:", error);
 				alert(error.message);
 			} finally {
 				this.loading = false;
+			}
+		},
+
+		async updateLogoutTime(userId) {
+			try {
+				const userRef = doc(db, "users", userId);
+				const userSnapshot = await getDoc(userRef);
+				const userData = userSnapshot.exists()
+					? userSnapshot.data()
+					: null;
+
+				if (userData && userData.lastLogin) {
+					const loginTime = new Date(userData.lastLogin); // Pretvori poslednji login u Date objekat
+					const logoutTime = new Date(); // Trenutno vreme (odjava)
+					const timeSpent = Math.floor(
+						(logoutTime - loginTime) / 1000
+					); // Izračunaj vreme provedeno u sekundama
+
+					// Ažuriraj timeSpent u Firestore-u
+					await setDoc(
+						userRef,
+						{
+							lastLogout: logoutTime.toISOString(), // Postavi vreme odjave u ISO format
+							timeSpent: userData.timeSpent + timeSpent, // Saberi novo vreme sa prethodnim
+						},
+						{ merge: true } // Održavaj prethodne podatke
+					);
+
+					console.log(timeSpent, loginTime, logoutTime);
+				}
+			} catch (error) {
+				console.error("Error updating logout time:", error);
+			}
+		},
+
+		async logoutUser() {
+			try {
+				const user = auth.currentUser;
+				if (user) {
+					await this.updateLogoutTime(user.uid); // Ažuriraj vreme pre odjave
+				} else {
+					console.log("No user is currently logged in.");
+				}
+
+				await auth.signOut(); // Onda odjavi korisnika
+				alert("You have been logged out.");
+			} catch (error) {
+				console.error("Error logging out:", error);
 			}
 		},
 
@@ -317,8 +383,8 @@ export default {
 			this.email = "";
 			this.password = "";
 			this.username = "";
-			this.role = "user"; // Reset role for next user
-			this.adminCode = ""; // Clear the admin code
+			this.role = "user";
+			this.adminCode = "";
 		},
 	},
 };

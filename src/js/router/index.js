@@ -3,6 +3,7 @@ import HomePage from "../pages/HomePage.vue";
 import TheDashboard from "../pages/TheDashboard.vue";
 import UserProfile from "../pages/UserProfile.vue";
 import CalendarPage from "../pages/CalendarPage.vue";
+import TasksPage from "../pages/TasksPage.vue";
 
 const routes = [
 	{
@@ -30,6 +31,12 @@ const routes = [
 		name: "Calendar",
 		path: "/dashboard/:username/calendar",
 		component: CalendarPage,
+		props: true,
+	},
+	{
+		name: "Tasks",
+		path: "/dashboard/:username/tasks",
+		component: TasksPage,
 		props: true,
 	},
 ];

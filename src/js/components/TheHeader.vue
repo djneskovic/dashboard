@@ -35,7 +35,14 @@
 					</router-link>
 				</li>
 				<li>
-					<a href="">Tasks</a>
+					<router-link
+						:to="{
+							name: 'Tasks',
+							params: { username: username },
+						}"
+						@click="closeMenu()"
+						>Tasks</router-link
+					>
 				</li>
 				<li>
 					<router-link
@@ -100,6 +107,8 @@
 import TheForm from "./TheForm.vue";
 import { auth } from "../firebase/firebase";
 import { signOut, onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { db } from "../firebase/firebase";
 
 export default {
 	components: {
@@ -166,7 +175,13 @@ export default {
 
 		async logout() {
 			try {
-				await signOut(auth);
+				const user = auth.currentUser;
+				if (user) {
+					// Ažuriraj vreme pre nego što se korisnik odjavi
+					await this.updateLogoutTime(user.uid);
+				}
+
+				await signOut(auth); // Zatvori sesiju
 				this.isLoggedIn = false;
 				this.username = "";
 				alert("You have been logged out.");
@@ -174,6 +189,36 @@ export default {
 			} catch (error) {
 				console.error("Error logging out:", error);
 				alert("Logout failed. Please try again.");
+			}
+		},
+
+		async updateLogoutTime(userId) {
+			try {
+				const userRef = doc(db, "users", userId);
+				const userSnapshot = await getDoc(userRef);
+				const userData = userSnapshot.exists()
+					? userSnapshot.data()
+					: null;
+
+				if (userData && userData.lastLogin) {
+					const loginTime = new Date(userData.lastLogin);
+					const logoutTime = new Date();
+					const timeSpent = Math.floor(
+						(logoutTime - loginTime) / 60000
+					);
+
+					await setDoc(
+						userRef,
+						{
+							lastLogout: logoutTime.toLocaleString(),
+							timeSpent:
+								(userData.timeSpent || 0) + timeSpent,
+						},
+						{ merge: true }
+					);
+				}
+			} catch (error) {
+				console.error("Error updating logout time:", error);
 			}
 		},
 
